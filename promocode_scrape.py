@@ -59,7 +59,7 @@ def scrape_deals(max_items=100, url="https://promocodes.com/coupons/clothing"):
             EC.presence_of_element_located((By.ID, "__NEXT_DATA__"))
         )
         app.logger.info(f"Starting scrape on URL: {url}")  # Log start of scraping
-        for _ in range(2):
+        while True:
             try:
                 # Wait for button to appear
                 button = WebDriverWait(driver, 5).until(
@@ -73,6 +73,9 @@ def scrape_deals(max_items=100, url="https://promocodes.com/coupons/clothing"):
             except ElementClickInterceptedException:
                 print("Button not clickable, retrying...")
                 break
+            except Exception as e:
+                print(f"Unexpected error while clicking button: {e}")
+                break  # Exit the loop for any other unexpected errors
 
         soup = BeautifulSoup(driver.page_source, "html.parser")
         extracted_data = soup.find("script", {"id": "__NEXT_DATA__"})
@@ -94,7 +97,7 @@ def scrape_deals(max_items=100, url="https://promocodes.com/coupons/clothing"):
             }
             for c in full_coupons
         ]
-    # for coupon in coupons:
+    # # for coupon in coupons:
     for coupon in coupons[:3]:
         url_each = f"{url}?c={coupon['couponId']}"
         print(url_each)

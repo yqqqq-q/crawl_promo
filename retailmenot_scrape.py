@@ -63,7 +63,7 @@ def scrape_deals(max_items=100, url="https://www.retailmenot.com/coupons/clothin
             EC.presence_of_element_located((By.XPATH, "//*[contains(@class, 'bg-purple-700') and contains(@class, 'rounded-full')]"))
         )
         app.logger.info(f"Starting scrape on URL: {url}")  # Log start of scraping
-        for _ in range(1):
+        while True:
             try:
                 # Wait for button to appear
                 button = WebDriverWait(driver, 5).until(
@@ -71,7 +71,8 @@ def scrape_deals(max_items=100, url="https://www.retailmenot.com/coupons/clothin
                     EC.element_to_be_clickable((By.XPATH, "//button[.//span[text()='Show More Offers']]"))
                 )
                 driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", button)
-                # time.sleep(2)
+                time.sleep(2)
+                print("ckucj clickjshfdskjfhskdjfh")
 
                 button.click()
 
@@ -81,8 +82,12 @@ def scrape_deals(max_items=100, url="https://www.retailmenot.com/coupons/clothin
             except ElementClickInterceptedException:
                 print("Button not clickable, retrying...")
                 break
+            except Exception as e:
+                print(f"Unexpected error while clicking button: {e}")
+                break  # Exit the loop for any other unexpected errors
+
         
-        anchor_elements = driver.find_elements(By.TAG_NAME, "a")
+        # anchor_elements = driver.find_elements(By.TAG_NAME, "a")
         soup = BeautifulSoup(driver.page_source, "html.parser")
         extracted_data_list = soup.find_all("a", class_=[
         "relative", "mb-5", "block", "flex", "h-full", "cursor-pointer", "overflow-hidden", "bg-white",
@@ -158,16 +163,16 @@ def scrape_deals(max_items=100, url="https://www.retailmenot.com/coupons/clothin
 if __name__ == '__main__':
     coupons = scrape_deals()
     print(coupons)
-    # client = MongoClient("mongodb://ruser1:rpassw1@localhost:27417/?authSource=admin")
-    # db = client["try_database"]
-    # collection = db["promocode_1"]
+    client = MongoClient("mongodb://ruser1:rpassw1@localhost:27417/?authSource=admin")
+    db = client["try_database"]
+    collection = db["retailmenot_1"]
     
-    # for coupon in coupons:
-    # # Check if an identical document already exists
-    #     existing = collection.find_one(coupon)
+    for coupon in coupons:
+    # Check if an identical document already exists
+        existing = collection.find_one(coupon)
     
-    #     if not existing:
-    #         collection.insert_one(coupon)
-    #         print(f"Inserted couponId: {coupon.get('couponId')}")
-    #     else:
-    #         print(f"Duplicate found, skipped couponId: {coupon.get('couponId')}")
+        if not existing:
+            collection.insert_one(coupon)
+            print(f"Inserted siteLink: {coupon.get('siteLink')}")
+        else:
+            print(f"Duplicate found, skipped siteLink: {coupon.get('siteLink')}")
