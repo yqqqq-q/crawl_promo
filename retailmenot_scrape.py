@@ -129,7 +129,7 @@ def scrape_deals(max_items=100, url="https://www.retailmenot.com/coupons/clothin
 
 
     # # for coupon in coupons:
-    for coupon in coupons[:3]:
+    for coupon in coupons:
         url_each = f"{url}{coupon['siteLink']}"
         try:
             driver = Chrome(options=chrome_options)
@@ -137,22 +137,28 @@ def scrape_deals(max_items=100, url="https://www.retailmenot.com/coupons/clothin
             driver.implicitly_wait(10)
             driver.get(url_each)
 
-        # Wait for the div to load using partial class match or full class string
-            code_element = WebDriverWait(driver, 60).until(
-            EC.presence_of_element_located((By.XPATH, "//div[contains(@class, 'bg-clip-text') and contains(@class, 'rounded-full') and @x-data='codeGenerator()']")))
-            coupon_code = code_element.text.strip()
+            soup = BeautifulSoup(driver.page_source, "html.parser")
 
-            end_date_element = WebDriverWait(driver, 15).until(
-            EC.presence_of_element_located((By.XPATH, "//p[contains(@class, 'text-center')]")))
-            end_date = end_date_element.text.strip()
+            expire_date = "unknown"
+            opener_div = soup.find("div", class_="opener")
+            if opener_div:
+                    for p in opener_div.find_all("p", class_="text-base font-semibold", recursive=False):
+                        if "Ends" in p.text:
+                            expire_date = p.text.strip()
+                            break
+            coupon["expireAt"] = expire_date
+            print(expire_date)
 
-            print(f"Coupon code found: {coupon_code[:-6]} + !{end_date}!")
+            target_div = soup.find('div', class_=lambda x: x and 'bg-clip-text' in x and 'rounded-full' in x)
+            if target_div and target_div.get("x-data") == "codeGenerator()":
+                coupon_code = target_div.text.strip()
+                coupon["couponCode"]=coupon_code[:-6]
+                print(coupon["couponCode"])
 
-        # Store it back into the coupon dict
-            coupon["couponCode"] = coupon_code[:-6]
-            coupon["endDate"] = end_date
         except TimeoutException:
             print("Failed to load page or locate elements in time. Exiting crawl.")
+        except Exception as e:
+            print("Error parsing x-data:", e)
         finally:
             driver.quit()
 
@@ -163,16 +169,16 @@ def scrape_deals(max_items=100, url="https://www.retailmenot.com/coupons/clothin
 if __name__ == '__main__':
     coupons = scrape_deals()
     print(coupons)
-    client = MongoClient("mongodb://ruser1:rpassw1@localhost:27417/?authSource=admin")
-    db = client["try_database"]
-    collection = db["retailmenot_1"]
+    # client = MongoClient("mongodb://ruser1:rpassw1@localhost:27417/?authSource=admin")
+    # db = client["try_database"]
+    # collection = db["retailmenot_1"]
     
-    for coupon in coupons:
-    # Check if an identical document already exists
-        existing = collection.find_one(coupon)
+    # for coupon in coupons:
+    # # Check if an identical document already exists
+    #     existing = collection.find_one(coupon)
     
-        if not existing:
-            collection.insert_one(coupon)
-            print(f"Inserted siteLink: {coupon.get('siteLink')}")
-        else:
-            print(f"Duplicate found, skipped siteLink: {coupon.get('siteLink')}")
+    #     if not existing:
+    #         collection.insert_one(coupon)
+    #         print(f"Inserted siteLink: {coupon.get('siteLink')}")
+    #     else:
+    #         print(f"Duplicate found, skipped siteLink: {coupon.get('siteLink')}")
