@@ -1,7 +1,7 @@
 import os
 import sys
 import logging
-
+from datetime import date  
 from flask import Flask, abort, jsonify
 from pymongo import MongoClient
 from bson.errors import InvalidId
@@ -61,7 +61,7 @@ def get_item(item_slug):
         "requestSlug": "shein.com",
         "store_name": "SHEIN",
         "deal_description": "30% Off Sitewide",
-        "expireAt": "Ends 07/08/2025",
+        "expireAt": "2025-08-07",
         "couponCode": "9YKU"
     }
     else:
