@@ -169,16 +169,16 @@ def scrape_deals(max_items=100, url="https://www.retailmenot.com/coupons/clothin
 if __name__ == '__main__':
     coupons = scrape_deals()
     print(coupons)
-    # client = MongoClient("mongodb://ruser1:rpassw1@localhost:27417/?authSource=admin")
-    # db = client["try_database"]
-    # collection = db["retailmenot_1"]
+    client = MongoClient("mongodb://ruser1:rpassw1@localhost:27417/?authSource=admin")
+    db = client["try_database"]
+    collection = db["retailmenot"]
     
-    # for coupon in coupons:
-    # # Check if an identical document already exists
-    #     existing = collection.find_one(coupon)
+    for coupon in coupons:
+    # Check if an identical document already exists
+        existing = collection.find_one(coupon)
     
-    #     if not existing:
-    #         collection.insert_one(coupon)
-    #         print(f"Inserted siteLink: {coupon.get('siteLink')}")
-    #     else:
-    #         print(f"Duplicate found, skipped siteLink: {coupon.get('siteLink')}")
+        if not existing:
+            collection.insert_one(coupon)
+            print(f"Inserted siteLink: {coupon.get('siteLink')}")
+        else:
+            print(f"Duplicate found, skipped siteLink: {coupon.get('siteLink')}")
