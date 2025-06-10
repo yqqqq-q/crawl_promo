@@ -21,6 +21,9 @@ from datetime import datetime, timedelta, timezone
 from selenium.common.exceptions import ElementClickInterceptedException, NoSuchElementException, StaleElementReferenceException
 import ast
 import atexit
+from datetime import datetime
+import pytz
+import re
 app = Flask(__name__)
 
 
@@ -63,10 +66,11 @@ def scrape_deals(max_items=100, url="https://www.retailmenot.com/coupons/clothin
             EC.presence_of_element_located((By.XPATH, "//*[contains(@class, 'bg-purple-700') and contains(@class, 'rounded-full')]"))
         )
         app.logger.info(f"Starting scrape on URL: {url}")  # Log start of scraping
-        while True:
+        # while True:
+        for _ in range(4):
             try:
                 # Wait for button to appear
-                button = WebDriverWait(driver, 5).until(
+                button = WebDriverWait(driver, 50).until(
                     # EC.element_to_be_clickable((By.XPATH, "//*[contains(@class, 'bg-purple-700') and contains(@class, 'rounded-full')]"))
                     EC.element_to_be_clickable((By.XPATH, "//button[.//span[text()='Show More Offers']]"))
                 )
@@ -151,14 +155,15 @@ def scrape_deals(max_items=100, url="https://www.retailmenot.com/coupons/clothin
 
             target_div = soup.find('div', class_=lambda x: x and 'bg-clip-text' in x and 'rounded-full' in x)
             if target_div and target_div.get("x-data") == "codeGenerator()":
-                coupon_code = target_div.text.strip()
-                coupon["couponCode"]=coupon_code[:-6]
+                coupon_raw = target_div.text.strip()
+                coupon_raw = coupon_raw[:-6].strip()
+                coupon["couponCode"]=coupon_raw
                 print(coupon["couponCode"])
 
         except TimeoutException:
             print("Failed to load page or locate elements in time. Exiting crawl.")
         except Exception as e:
-            print("Error parsing x-data:", e)
+            print("Error:", e)
         finally:
             driver.quit()
 
@@ -173,12 +178,32 @@ if __name__ == '__main__':
     db = client["try_database"]
     collection = db["retailmenot"]
     
+# Create TTL index once: document expires exactly at expireDate
+    collection.create_index("expireDate", expireAfterSeconds=0)
+
+    def parse_expire_date(text):
+        match = re.search(r'(\d{2})/(\d{2})/(\d{4})', text)
+        if match:
+            month, day, year = match.groups()
+            # Return as UTC datetime
+            return datetime(int(year), int(month), int(day), tzinfo=pytz.UTC)
+        return None
+
     for coupon in coupons:
-    # Check if an identical document already exists
-        existing = collection.find_one(coupon)
-    
+        expire_text = coupon.get("expireAt", "").strip()
+        expire_date = parse_expire_date(expire_text)
+
+        # Only attach expireDate if valid
+        if expire_date:
+            coupon["expireDate"] = expire_date
+
+        coupon.pop("expireAt", None)
+
+        # Avoid inserting duplicates
+        existing = collection.find_one({"siteLink": coupon["siteLink"]})
+
         if not existing:
             collection.insert_one(coupon)
-            print(f"Inserted siteLink: {coupon.get('siteLink')}")
+            print(f"Inserted: {coupon}")
         else:
-            print(f"Duplicate found, skipped siteLink: {coupon.get('siteLink')}")
+            print(f"Duplicate found, skipped siteLink: {coupon['siteLink']}")

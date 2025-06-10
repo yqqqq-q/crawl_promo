@@ -85,7 +85,9 @@ if not app.debug:
     app.logger.info('Application startup')
 
 # client = MongoClient("mongodb+srv://logoman:abcd1234@cluster0.om1oelb.mongodb.net/?retryWrites=true&w=majority")
-client = MongoClient('mongodb://localhost/')
+# client = MongoClient('mongodb://localhost/')
+client = MongoClient("mongodb://ruser1:rpassw1@localhost:27417/?authSource=admin")
+
 db = client['deals_database']
 women_deals_collection = db['women_deals']
 men_deals_collection = db['men_deals']
