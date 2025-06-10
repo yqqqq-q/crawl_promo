@@ -1,0 +1,1 @@
+{"indexes":[{"v":{"$numberInt":"2"},"key":{"_id":{"$numberInt":"1"}},"name":"_id_"},{"v":{"$numberInt":"2"},"key":{"expireDate":{"$numberInt":"1"}},"name":"expireDate_1","expireAfterSeconds":{"$numberInt":"0"}}],"uuid":"19b9e5ae6a9b4033ade520454e8088b4","collectionName":"retailmenot","type":"collection"}
