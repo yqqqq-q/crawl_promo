@@ -1,0 +1,52 @@
+[
+    {
+        "dealId": "5018502",
+        "shop_now_link": "https://www.macys.com/shop/featured/tommy-hilfiger/Price_discount_range/20_PERCENT_%20off%20%26%20more",
+        "title_link": "https://www.dealmoon.com/en/up-to-75-off-macys-tommy-hilfiger-and-tommy-jeans-sale/5018502.html",
+        "title": "Unknown Title",
+        "subtitle": "No Subtitle Available",
+        "details": [],
+        "scrape_date": "2025-06-11 18:57:25",
+        "expireAt": "2025-07-11"
+    },
+    {
+        "dealId": "5006043",
+        "shop_now_link": "https://www.bloomingdales.com/",
+        "title_link": "https://www.dealmoon.com/en/up-to-extra-30-off-bloomingdales-buy-more-save-more-event/5006043.html",
+        "title": "Unknown Title",
+        "subtitle": "No Subtitle Available",
+        "details": [],
+        "scrape_date": "2025-06-11 18:57:30",
+        "expireAt": "2025-07-11"
+    },
+    {
+        "dealId": "5007695",
+        "shop_now_link": "https://www.oluxury.com/us_en/",
+        "title_link": "https://www.dealmoon.com/en/extra-10-off-oluxury-fathers-day-sale/5007695.html",
+        "title": "Unknown Title",
+        "subtitle": "No Subtitle Available",
+        "details": [],
+        "scrape_date": "2025-06-11 18:57:39",
+        "expireAt": "2025-07-11"
+    },
+    {
+        "dealId": "4990212",
+        "shop_now_link": "https://www.madewell.com/womens/sale/",
+        "title_link": "https://www.dealmoon.com/en/up-to-90-off-madewell-sale/4990212.html",
+        "title": "Unknown Title",
+        "subtitle": "No Subtitle Available",
+        "details": [],
+        "scrape_date": "2025-06-11 18:57:42",
+        "expireAt": "2025-07-11"
+    },
+    {
+        "dealId": "4991485",
+        "shop_now_link": "https://www.cettire.com/",
+        "title_link": "https://www.dealmoon.com/en/up-to-65-off-extra-5-off-cettire-fashion-sale/4991485.html",
+        "title": "Unknown Title",
+        "subtitle": "No Subtitle Available",
+        "details": [],
+        "scrape_date": "2025-06-11 18:57:47",
+        "expireAt": "2025-07-11"
+    }
+]
