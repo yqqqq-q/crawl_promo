@@ -112,9 +112,9 @@ def scrape_deals(max_items=100, url="https://www.dealmoon.com/en/clothing-jewelr
 
 
 if __name__ == '__main__':
-    client = MongoClient("mongodb://ruser1:rpassw1@localhost:27417/?authSource=admin")
-    db = client["try_database"]                        # database name
-    collection = db["dealmoonlinks"]
-    coupons = scrape_deals(collections=collection)
-    print(coupons)
-    # scrape_deals()
+    # client = MongoClient("mongodb://ruser1:rpassw1@localhost:27417/?authSource=admin")
+    # db = client["try_database"]                        # database name
+    # collection = db["dealmoonlinks"]
+    # coupons = scrape_deals(collections=collection)
+    # print(coupons)
+    scrape_deals()

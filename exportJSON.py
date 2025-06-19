@@ -1,35 +1,19 @@
-# from pymongo import MongoClient
-# import json
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 
-# # 1. Connect to MongoDB
-# client = MongoClient("mongodb://ruser1:rpassw1@localhost:27417/?authSource=admin")
-# db = client["try_database"]
-# collection = db["retailmenot"]
+# Setup headless browser
+options = Options()
+options.add_argument("--headless")
+driver = webdriver.Chrome(options=options)
 
-# # 2. Fetch all documents
-# documents = list(collection.find())
+# Go to the initial redirect link
+driver.get("https://go.dealmoon.com/exec/j?d=5036138")
 
-# # 3. Convert ObjectId to string (JSON can't serialize ObjectId)
-# for doc in documents:
-#     doc["_id"] = str(doc["_id"])
+# Wait for redirect to complete
+driver.implicitly_wait(5)
 
-# # 4. Export to JSON file
-# with open("retailmenot_clothing_shoes_accessories.json", "w", encoding="utf-8") as f:
-#     json.dump(documents, f, indent=4)
+# Get final URL
+final_url = driver.current_url
+print("Final URL:", final_url)
 
-import json
-
-# Load your data (if from a file)
-with open('retailmenot_clothing_shoes_accessories.json', 'r', encoding='utf-8') as f:
-    data = json.load(f)
-
-# Clean couponCode fields
-for item in data:
-    if 'couponCode' in item:
-        item['couponCode'] = item['couponCode'].strip()
-
-# Optionally save back to a new file
-with open('retailmenot_clothing_shoes_accessories.json', 'w', encoding='utf-8') as f:
-    json.dump(data, f, indent=4)
-
-print("Cleaned couponCode fields.")
+driver.quit()

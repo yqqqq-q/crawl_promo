@@ -67,7 +67,7 @@ def scrape_deals(max_items=100, url="https://www.retailmenot.com/coupons/clothin
         )
         app.logger.info(f"Starting scrape on URL: {url}")  # Log start of scraping
         # while True:
-        for _ in range(4):
+        for _ in range(30):
             try:
                 # Wait for button to appear
                 button = WebDriverWait(driver, 50).until(
