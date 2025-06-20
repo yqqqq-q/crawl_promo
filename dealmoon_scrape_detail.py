@@ -50,29 +50,34 @@ def get_right_info(soup):
     right = soup.find(class_='edit-content').find(class_='event_statistics') or soup.select_one('.edit-content.event_statistics')
     
     offers = {
-        "description": {},
-        "link": None,
+        "longer_description": {},
+        "links": {},
         "coupon": None,
         "shipping_info": None
     }
 
     # Start counters
     desc_counter = 1
+    desc_counter_2 = 1
 
     if right:
         for li in right.find_all('li'):
             text = li.get_text(strip=True)
 
             # Add to description
-            offers["description"][desc_counter] = text
+            offers["longer_description"][desc_counter] = text
             desc_counter += 1
 
             # Capture first link
-            if not offers["link"]:
-                a_tag = li.find('a')
-                if a_tag:
-                    offers["link"] = get_final_link(url=a_tag.get('href'))
-
+            # if not offers["link"]:
+            #     a_tag = li.find('a')
+            #     if a_tag:
+            #         offers["link"] = get_final_link(url=a_tag.get('href'))
+            for a_tag in li.find_all('a'):
+                href = a_tag.get('href')
+                if href:
+                    offers["links"][desc_counter_2] = get_final_link(url=href)
+                    desc_counter_2 += 1
             # Capture first coupon
             if not offers["coupon"]:
                 b_tag = li.find('b', class_='coupon')
@@ -83,13 +88,13 @@ def get_right_info(soup):
             if 'shipping' in text.lower() and not offers["shipping_info"]:
                 offers["shipping_info"] = text
 
-    # Final result
-    result = {
-        "offers": offers
-    }
-    return result
+    # # Final result
+    # result = {
+    #     "offers": offers
+    # }
+    return offers
 
-def get_bottom_info(soup):
+def get_bottom_info(soup, href):
     elements = soup.find_all(
     lambda tag: tag.has_attr('class') and all(cls in tag['class'] for cls in [
         "js-sp-item", 
@@ -100,7 +105,7 @@ def get_bottom_info(soup):
         "heighted"
     ])
     )
-    products_dict = {"products": {}}
+    products_dict = {}
 
     # Extract data
     for i, product in enumerate(elements, start=0):
@@ -122,14 +127,23 @@ def get_bottom_info(soup):
         title_p = product.find("p", class_="deal_text")
         title = title_p.get_text(strip=True) if title_p else None
 
-        products_dict["products"][i] = {
+        products_dict = {
             # "data_id": data_id,
+            "href":href,
             "product_url": product_url,
             # "image_url": image_url,
             "current_price": data_price,
             "original_price": original_price,
             "title": title
         }
+        print(products_dict)
+        
+        status = collection.update_one(
+            {"href": products_dict["product_url"]},     # Query condition
+            {"$set": products_dict},             # Update operation
+            upsert=True                     # Insert if not found
+        )
+        print(status)
 
 def format_description(desc):
 
@@ -192,17 +206,56 @@ def get_soup(url="https://www.dealmoon.com/en/up-to-extra-30-off-bloomingdales-b
 
 
 if __name__ == '__main__':
-    # client = MongoClient("mongodb://ruser1:rpassw1@localhost:27417/?authSource=admin")
-    # db = client["try_database"]                        # database name
-    # collection = db["dealmoonlinks"]
+    client = MongoClient("mongodb://ruser1:rpassw1@localhost:27417/?authSource=admin")
+    db = client["try_database"]                        # database name
+    collection = db["dealmoon_byitem"]
+    
+    # bottom = get_bottom_info(soup=soup)
+    # print(bottom)
+    with open('dealmoon_links.json', 'r') as file:
+        data = json.load(file)
+
+# store wise    
+#TODO: try_database> db.dealmoon_bystore.deleteMany({ link: 'https://go.dealmoon.com/exec/j' })
+# TODO: _id: ObjectId('68549292e5f68c64b1fe1e2e'),
+    # href: 'https://www.dealmoon.com/en/fw21-collection-ssense-essential-adults-kids-styles/2608255.html',
+    # coupon: null,
+    # description: 'SSENSE Essentials Adults + Kids Styles',
+    # link: 'https://www.ssense.com/en-us/account/login',
+    # longer_description: {
+    #   '1': 'SSENSE now offers Essentials 2025 summer collectionsNew Arrival.new customers/Direct purchase link',
+    #   '2': 'Fall/Winter collectionsup to 60% off.',
+    #   '3': 'Shop by category:Men|Women|Kids',
+
+
+    # for store in data:
+    #     soup = get_soup(url=store["href"])
+    #     right = get_right_info(soup=soup)
+    #     combined=store|right
+    #     if "longer_description" in combined:
+    #         combined["longer_description"] = {
+    #             str(k): v for k, v in combined["longer_description"].items()
+    #         }
+    #     if "links" in combined:
+    #         combined["links"] = {
+    #             str(k): v for k, v in combined["links"].items()
+    #         }
+    #     status = collection.update_one(
+    #         {"href": combined["href"]},     # Query condition
+    #         {"$set": combined},             # Update operation
+    #         upsert=True                     # Insert if not found
+    #     )
+    #     print(status)
+
+
+
+# item wise
+    for store in data:
+        soup = get_soup(url=store["href"])
+        # right = get_right_info(soup=soup)
+        botton = get_bottom_info(soup=soup, href=store["href"])
+
+
+
     # coupons = scrape_deals(collections=collection)
     # print(coupons)
-    soup = get_soup(url="https://www.dealmoon.com/en/up-to-70-off-soma-semi-annual-sale/5036152.html?rip=aG9tZV9saXN0fGNsb3RoaW5nLWpld2VscnktYmFncyU3Q3dvbWVucy1jbG90aGluZ3wz")
-    right = get_right_info(soup=soup)
-    print(right)
-    bottom = get_bottom_info(soup=soup)
-    print(bottom)
-    # with open ("dealmoon_links.json", "r", encoding="utf-8") as f:
-    #     for store in f:
-    #         print(store)
-    #         # returned = scrape_deals(url=store.href)
