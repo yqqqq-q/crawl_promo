@@ -7,9 +7,8 @@ import json
 from logging.handlers import RotatingFileHandler
 import json
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString
 from flask import Flask, jsonify, request
-from groq import Groq
 from httpx import TimeoutException
 from pymongo import MongoClient
 from selenium.webdriver import Chrome
@@ -47,51 +46,56 @@ def get_final_link(url):
     return clean_url
 
 def get_right_info(soup):
-    right = soup.find(class_='edit-content').find(class_='event_statistics') or soup.select_one('.edit-content.event_statistics')
-    
+    # right = soup.find(class_='edit-content').find(class_='event_statistics') or soup.select_one('.edit-content.event_statistics')
+    title = soup.select_one('.title .txt')
+    subtitle = soup.select_one('.subtitle')
+    shipping_info = None
+    expire_data = None
+
+    # Extract details from <li> tags inside the content list
+    details_list = []
+    # Loop through detail items
+    for li in soup.select('.minfor ul li'):
+        # Insert a space before any inline tag (like <a> or <b>)
+
+        # Extract text and clean
+        text = li.get_text(" ", strip=True)
+        if 'shipping' in text.lower() or 'ship' in text.lower():
+            shipping_info = text
+            continue
+        elif 'end' in text.lower() or 'ship' in text.lower():
+            expire_data = text
+            continue
+        if text=="Buy >>" or text=="Buy>>":
+            continue
+
+        coupon_tag = li.select_one('b.coupon')
+        link_tag = li.find('a')
+
+        coupon = coupon_tag.get('data-clipboard-text') if coupon_tag else None
+        link = link_tag.get('href') if link_tag else None
+        # link = get_final_link(link)
+
+
+        entry = {
+            "description": text
+        }
+        if coupon: 
+            entry["coupon"] = coupon
+        # if link:
+        #     entry["link"] = link
+        details_list.append(entry)
+
+    # Final JSON structure
     offers = {
-        "longer_description": {},
-        "links": {},
-        "coupon": None,
-        "shipping_info": None
+        "title": title.get_text(strip=True) if title else "",
+        "subtitle": subtitle.get_text(strip=True) if subtitle else "",
+        "detail": details_list if details_list else None,
+        "shipping_info": shipping_info,
+        "expire_info": expire_data
     }
 
-    # Start counters
-    desc_counter = 1
-    desc_counter_2 = 1
 
-    if right:
-        for li in right.find_all('li'):
-            text = li.get_text(strip=True)
-
-            # Add to description
-            offers["longer_description"][desc_counter] = text
-            desc_counter += 1
-
-            # Capture first link
-            # if not offers["link"]:
-            #     a_tag = li.find('a')
-            #     if a_tag:
-            #         offers["link"] = get_final_link(url=a_tag.get('href'))
-            for a_tag in li.find_all('a'):
-                href = a_tag.get('href')
-                if href:
-                    offers["links"][desc_counter_2] = get_final_link(url=href)
-                    desc_counter_2 += 1
-            # Capture first coupon
-            if not offers["coupon"]:
-                b_tag = li.find('b', class_='coupon')
-                if b_tag:
-                    offers["coupon"] = b_tag.get('data-clipboard-text')
-
-            # Identify shipping info
-            if 'shipping' in text.lower() and not offers["shipping_info"]:
-                offers["shipping_info"] = text
-
-    # # Final result
-    # result = {
-    #     "offers": offers
-    # }
     return offers
 
 def get_bottom_info(soup, href):
@@ -145,19 +149,6 @@ def get_bottom_info(soup, href):
         )
         print(status)
 
-def format_description(desc):
-
-        # Insert space between lowercase/word and number/uppercase (e.g., "offers40%" → "offers 40%")
-        desc = re.sub(r'([a-zA-Z])(\d)', r'\1 \2', desc)
-        desc = re.sub(r'(\d)([A-Z])', r'\1 \2', desc)
-
-        # Insert space after punctuation if missing
-        desc = re.sub(r'(\.)(\w)', r'\1 \2', desc)
-
-        # Ensure spaces after colons
-        desc = re.sub(r':(\S)', r': \1', desc)
-
-        return desc.strip()
 
 def get_soup(url="https://www.dealmoon.com/en/up-to-extra-30-off-bloomingdales-buy-more-save-more-event/5006043.html",max_items=100,  collections=None):    
     app.logger.info(f"Max item count is : {max_items}")
@@ -208,41 +199,22 @@ def get_soup(url="https://www.dealmoon.com/en/up-to-extra-30-off-bloomingdales-b
 if __name__ == '__main__':
     client = MongoClient("mongodb://ruser1:rpassw1@localhost:27417/?authSource=admin")
     db = client["try_database"]                        # database name
-    collection = db["dealmoon_byitem"]
+    collection = db["dealmoon_by_item"]
     
-    # bottom = get_bottom_info(soup=soup)
-    # print(bottom)
     with open('dealmoon_links.json', 'r') as file:
         data = json.load(file)
 
 # store wise    
-#TODO: try_database> db.dealmoon_bystore.deleteMany({ link: 'https://go.dealmoon.com/exec/j' })
-# TODO: _id: ObjectId('68549292e5f68c64b1fe1e2e'),
-    # href: 'https://www.dealmoon.com/en/fw21-collection-ssense-essential-adults-kids-styles/2608255.html',
-    # coupon: null,
-    # description: 'SSENSE Essentials Adults + Kids Styles',
-    # link: 'https://www.ssense.com/en-us/account/login',
-    # longer_description: {
-    #   '1': 'SSENSE now offers Essentials 2025 summer collectionsNew Arrival.new customers/Direct purchase link',
-    #   '2': 'Fall/Winter collectionsup to 60% off.',
-    #   '3': 'Shop by category:Men|Women|Kids',
-
-
     # for store in data:
     #     soup = get_soup(url=store["href"])
     #     right = get_right_info(soup=soup)
-    #     combined=store|right
-    #     if "longer_description" in combined:
-    #         combined["longer_description"] = {
-    #             str(k): v for k, v in combined["longer_description"].items()
-    #         }
-    #     if "links" in combined:
-    #         combined["links"] = {
-    #             str(k): v for k, v in combined["links"].items()
-    #         }
+    #     right["href"] = store["href"]
+    #     print(right)
+
+
     #     status = collection.update_one(
-    #         {"href": combined["href"]},     # Query condition
-    #         {"$set": combined},             # Update operation
+    #         {"href": right["href"]},     # Query condition
+    #         {"$set": right},             # Update operation
     #         upsert=True                     # Insert if not found
     #     )
     #     print(status)
@@ -254,8 +226,3 @@ if __name__ == '__main__':
         soup = get_soup(url=store["href"])
         # right = get_right_info(soup=soup)
         botton = get_bottom_info(soup=soup, href=store["href"])
-
-
-
-    # coupons = scrape_deals(collections=collection)
-    # print(coupons)

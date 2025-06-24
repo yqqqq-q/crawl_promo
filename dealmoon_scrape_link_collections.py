@@ -9,7 +9,6 @@ import json
 import requests
 from bs4 import BeautifulSoup
 from flask import Flask, jsonify, request
-from groq import Groq
 from httpx import TimeoutException
 from pymongo import MongoClient
 from selenium.webdriver import Chrome
